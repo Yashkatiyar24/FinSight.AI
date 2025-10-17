@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 
 // Context
 import AuthProvider from './context/SupabaseAuthContext'
-import { TransactionProvider } from './store/transactionStore'
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute'
@@ -50,8 +50,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TransactionProvider>
-          <Routes>
+        <Toaster 
+          position="top-right"
+          theme="dark"
+          richColors
+          closeButton
+        />
+        <Routes>
             {/* Public Routes */}
             <Route path="/auth/login" element={<FinSightAuthComponent />} />
             <Route path="/auth/signup" element={<FinSightAuthComponent />} />
@@ -116,7 +121,6 @@ function App() {
             {/* Catch all - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </TransactionProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

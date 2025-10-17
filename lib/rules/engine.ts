@@ -1,9 +1,7 @@
 // Rules engine for transaction categorization
 
-import type { Rule, Transaction } from '../supabase'
-
 export interface RuleMatch {
-  rule: Rule
+  rule: any
   confidence: number
 }
 
@@ -12,18 +10,23 @@ export interface CategoryResult {
   gst_rate: number
   confidence: number
   matched_by: 'rule' | 'ml'
-  rule_id?: number
+  rule_id?: string
 }
 
-export function applyRules(transaction: Transaction | any, rules: Rule[]): CategoryResult | null {
-  // Only apply active rules
-  const activeRules = rules.filter(rule => rule.active)
+export function applyRules(transaction: any, rules: any[]): CategoryResult | null {
+  // Only apply enabled rules, sorted by priority
+  const activeRules = rules
+    .filter(rule => rule.enabled)
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
   
   for (const rule of activeRules) {
     if (testRule(transaction, rule)) {
+      // Extract category and GST rate from rule actions
+      const actions = rule.actions || {}
+      
       return {
-        category: rule.target_category,
-        gst_rate: rule.gst_rate,
+        category: actions.category || 'Misc',
+        gst_rate: actions.gst_rate || 0,
         confidence: 1.0, // Rules have 100% confidence
         matched_by: 'rule',
         rule_id: rule.id
@@ -34,10 +37,37 @@ export function applyRules(transaction: Transaction | any, rules: Rule[]): Categ
   return null
 }
 
-export function testRule(transaction: Transaction | any, rule: Rule): boolean {
-  const conditions = rule.conditions.trim()
-  if (!conditions) return false
+export function testRule(transaction: any, rule: any): boolean {
+  if (!rule.conditions) return false
   
+  const conditions = rule.conditions
+  
+  // Handle both old string format and new JSON format
+  if (typeof conditions === 'string') {
+    return testLegacyConditions(transaction, conditions)
+  }
+  
+  // New JSON format
+  if (conditions.type === 'contains') {
+    return testContains(transaction, conditions.keywords?.join('|') || '')
+  }
+  
+  if (conditions.type === 'regex') {
+    return testRegex(transaction, conditions.pattern || '')
+  }
+  
+  if (conditions.type === 'and') {
+    return conditions.conditions?.every((cond: any) => testRule(transaction, { conditions: cond })) || false
+  }
+  
+  if (conditions.type === 'or') {
+    return conditions.conditions?.some((cond: any) => testRule(transaction, { conditions: cond })) || false
+  }
+  
+  return false
+}
+
+function testLegacyConditions(transaction: any, conditions: string): boolean {
   // Parse condition format: "contains: keyword1|keyword2" or "regex: pattern"
   const lines = conditions.split('\n').map(line => line.trim()).filter(Boolean)
   
@@ -62,7 +92,7 @@ export function testRule(transaction: Transaction | any, rule: Rule): boolean {
   return false
 }
 
-function testContains(transaction: Transaction | any, keywords: string): boolean {
+function testContains(transaction: any, keywords: string): boolean {
   const searchText = [
     transaction.description || '',
     transaction.merchant || ''
@@ -85,7 +115,7 @@ function testContains(transaction: Transaction | any, keywords: string): boolean
   })
 }
 
-function testRegex(transaction: Transaction | any, pattern: string): boolean {
+function testRegex(transaction: any, pattern: string): boolean {
   try {
     const regex = new RegExp(pattern, 'i')
     const searchText = [
@@ -139,7 +169,7 @@ export function validateRuleConditions(conditions: string): { valid: boolean; er
   return { valid: errors.length === 0, errors }
 }
 
-export function testRuleAgainstSample(rule: Rule, sampleText: string): { match: boolean; category?: string; gst_rate?: number } {
+export function testRuleAgainstSample(rule: any, sampleText: string): { match: boolean; category?: string; gst_rate?: number } {
   const mockTransaction = {
     description: sampleText,
     merchant: '',
@@ -148,10 +178,11 @@ export function testRuleAgainstSample(rule: Rule, sampleText: string): { match: 
   }
   
   const matches = testRule(mockTransaction, rule)
+  const actions = rule.actions || {}
   
   return {
     match: matches,
-    category: matches ? rule.target_category : undefined,
-    gst_rate: matches ? rule.gst_rate : undefined
+    category: matches ? actions.category : undefined,
+    gst_rate: matches ? actions.gst_rate : undefined
   }
 }

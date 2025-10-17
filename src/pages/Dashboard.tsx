@@ -15,7 +15,8 @@ import {
   XCircle
 } from 'lucide-react'
 import { useAuth } from '../context/SupabaseAuthContext'
-import { useTransactionStore } from '../store/transactionStore'
+import { DashboardService, formatCurrency } from '../services/dashboardService'
+import type { DashboardMetrics, Transaction } from '../lib/types'
 
 interface MetricCardProps {
   title: string
@@ -49,21 +50,41 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, isPositiv
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth()
-  const { transactions, metrics, getRecentTransactions } = useTransactionStore()
   const [loading, setLoading] = useState(true)
-
-  // Get recent transactions from store
-  const recentTransactions = getRecentTransactions(5)
-
-  // Debug logging
-  console.log('Dashboard - User state:', user)
-  console.log('Dashboard - Transactions in store:', transactions.length)
-  console.log('Dashboard - Metrics from store:', metrics)
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // If we have data in store or user is available, we're ready
-    setLoading(false)
-  }, [transactions.length, user])
+    if (user) {
+      loadDashboardData()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
+
+  const loadDashboardData = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Load dashboard metrics and recent transactions in parallel
+      const [metricsData, transactionsData] = await Promise.all([
+        DashboardService.getDashboardMetrics(user.id),
+        DashboardService.getRecentTransactions(user.id, 5)
+      ])
+
+      setMetrics(metricsData)
+      setRecentTransactions(transactionsData)
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -76,23 +97,31 @@ const Dashboard: React.FC = () => {
     )
   }
 
-  // Use store metrics or create default ones
+  if (error) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <XCircle className="w-8 h-8 text-red-400 mx-auto mb-4" />
+          <p className="text-red-400 mb-4">{error}</p>
+          <button
+            onClick={loadDashboardData}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Use loaded metrics or create default ones
   const displayMetrics = metrics || {
     total_revenue: 0,
     total_expenses: 0,
     net_profit: 0,
-    total_transactions: transactions.length,
+    total_transactions: 0,
+    total_gst: 0,
     categories: []
-  }
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
   }
 
   return (
@@ -116,7 +145,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Show upload prompt if no transactions */}
-      {transactions.length === 0 && (
+      {displayMetrics.total_transactions === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -138,7 +167,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Metrics Cards */}
-      {transactions.length > 0 && (
+      {displayMetrics.total_transactions > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
@@ -227,9 +256,13 @@ const Dashboard: React.FC = () => {
                       <div>
                         <p className="text-white font-medium">{transaction.description}</p>
                         <div className="flex items-center space-x-2 text-sm text-gray-400">
-                          <span>{transaction.merchant}</span>
-                          <span>•</span>
-                          <span>{transaction.final_category}</span>
+                          {transaction.merchant && (
+                            <>
+                              <span>{transaction.merchant}</span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span>{transaction.final_category || 'Misc'}</span>
                           <span>•</span>
                           <span>{new Date(transaction.tx_date).toLocaleDateString()}</span>
                         </div>
@@ -239,9 +272,9 @@ const Dashboard: React.FC = () => {
                       <p className={`font-semibold ${transaction.is_income ? 'text-green-400' : 'text-red-400'}`}>
                         {transaction.is_income ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                       </p>
-                      {transaction.ai_confidence && (
+                      {transaction.ml_confidence && (
                         <p className="text-xs text-gray-400">
-                          {Math.round(transaction.ai_confidence * 100)}% confidence
+                          {Math.round(transaction.ml_confidence * 100)}% confidence
                         </p>
                       )}
                     </div>

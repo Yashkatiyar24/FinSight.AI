@@ -2,10 +2,9 @@
 export type Database = {
   public: {
     Tables: {
-      users: {
+      profiles: {
         Row: {
-          id: string
-          email: string
+          user_id: string
           full_name: string | null
           company_name: string | null
           gstin: string | null
@@ -19,8 +18,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id: string
-          email: string
+          user_id: string
           full_name?: string | null
           company_name?: string | null
           gstin?: string | null
@@ -34,8 +32,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: string
-          email?: string
+          user_id?: string
           full_name?: string | null
           company_name?: string | null
           gstin?: string | null
@@ -382,7 +379,7 @@ export type Database = {
 }
 
 // Helper types
-export type User = Database['public']['Tables']['users']['Row']
+export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Upload = Database['public']['Tables']['uploads']['Row']
 export type Transaction = Database['public']['Tables']['transactions']['Row']
 export type Rule = Database['public']['Tables']['rules']['Row']

@@ -113,6 +113,39 @@ export const KEYWORD_CATEGORIES = {
       /\b(fee|charges|penalty|tax)\b/i,
       /\b(gst|tds|service\s*tax|cess)\b/i
     ]
+  },
+  
+  'Health & Medical': {
+    keywords: [
+      'hospital', 'doctor', 'medical', 'pharmacy', 'medicine', 'health',
+      'clinic', 'dentist', 'checkup', '1mg', 'netmeds', 'pharmeasy',
+      'apollo', 'fortis', 'max healthcare', 'medanta', 'aiims'
+    ],
+    patterns: [
+      /\b(hospital|doctor|medical|pharmacy|medicine|health)\b/i,
+      /\b(clinic|dentist|checkup|treatment)\b/i
+    ]
+  },
+  
+  'Education': {
+    keywords: [
+      'education', 'school', 'college', 'university', 'course', 'training',
+      'udemy', 'coursera', 'skillshare', 'masterclass', 'byju\'s',
+      'unacademy', 'vedantu', 'tuition', 'fees', 'exam fee'
+    ],
+    patterns: [
+      /\b(education|school|college|university|course|training)\b/i,
+      /\b(udemy|coursera|skillshare|masterclass)\b/i
+    ]
+  },
+  
+  'Misc': {
+    keywords: [
+      'other', 'miscellaneous', 'unknown', 'general', 'various', 'transfer'
+    ],
+    patterns: [
+      /\b(other|misc|unknown|general|transfer)\b/i
+    ]
   }
 }
 
@@ -125,5 +158,26 @@ export const DEFAULT_GST_RATES = {
   'Groceries': 0, // Essential items
   'Utilities': 18,
   'Salary': 0, // Income, no GST
-  'Fees': 18
+  'Fees': 18,
+  'Health & Medical': 12,
+  'Education': 0,
+  'Misc': 0
 }
+
+// Transaction categories for UI
+export const TRANSACTION_CATEGORIES = [
+  'Technology',
+  'Subscriptions',
+  'Meals & Entertainment',
+  'Travel',
+  'Shopping',
+  'Groceries',
+  'Utilities',
+  'Salary',
+  'Fees',
+  'Health & Medical',
+  'Education',
+  'Misc'
+] as const
+
+export type TransactionCategory = typeof TRANSACTION_CATEGORIES[number]

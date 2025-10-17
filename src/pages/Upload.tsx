@@ -9,22 +9,27 @@ import {
   CheckCircle, 
   XCircle, 
   AlertCircle,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react'
-import { useTransactionStore } from '../store/transactionStore'
+import { useAuth } from '../context/SupabaseAuthContext'
+import { UploadService, createDemoData, type UploadProgress } from '../services/uploadService'
+import { toast } from 'sonner'
 
 interface UploadedFile extends File {
   id?: string
-  status: 'uploading' | 'processing' | 'completed' | 'failed'
+  status: 'uploading' | 'parsing' | 'normalizing' | 'categorizing' | 'saving' | 'completed' | 'failed'
   progress: number
   error?: string
+  message?: string
 }
 
 const UploadPage: React.FC = () => {
-  const { addTransactions } = useTransactionStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragActive, setIsDragActive] = useState(false)
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false)
 
   // Simple file validation
   const validateFile = (file: File): { valid: boolean; error?: string } => {
@@ -68,6 +73,11 @@ const UploadPage: React.FC = () => {
   }, [])
 
   const processFiles = (fileList: File[]) => {
+    if (!user) {
+      toast.error('Please log in to upload files')
+      return
+    }
+
     console.log('Processing files:', fileList.map(f => f.name))
     
     fileList.forEach(file => {
@@ -80,6 +90,7 @@ const UploadPage: React.FC = () => {
           progress: 0,
           error: validation.error
         }])
+        toast.error(`${file.name}: ${validation.error}`)
         return
       }
 
@@ -87,118 +98,83 @@ const UploadPage: React.FC = () => {
       const uploadFile: UploadedFile = {
         ...file,
         status: 'uploading',
-        progress: 0
+        progress: 0,
+        message: 'Starting upload...'
       }
       
       setFiles(prev => [...prev, uploadFile])
       
-      // Simulate file processing
+      // Process file with real upload service
       processFile(uploadFile)
     })
   }
 
   const processFile = async (file: UploadedFile) => {
+    if (!user) return
+
     try {
       console.log('Processing file:', file.name)
       
-      // Update progress
-      updateFileStatus(file.name, 'uploading', 25)
-      await sleep(500)
+      const uploadService = new UploadService((progress: UploadProgress) => {
+        updateFileStatus(file.name, progress.stage, progress.progress, progress.message, progress.error)
+      })
+
+      const result = await uploadService.uploadAndProcess(file, user.id)
       
-      updateFileStatus(file.name, 'processing', 50)
-      await sleep(1000)
-      
-      updateFileStatus(file.name, 'processing', 75)
-      
-      // Generate demo transactions
-      const demoTransactions = generateDemoTransactions(file.name)
-      addTransactions(demoTransactions)
-      
-      updateFileStatus(file.name, 'completed', 100)
+      console.log('Upload completed:', result)
+      toast.success(`Successfully processed ${result.transactions.length} transactions from ${file.name}`)
       
       // Navigate to dashboard after successful upload
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Error processing file:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Processing failed'
+      updateFileStatus(file.name, 'failed', 100, errorMessage, errorMessage)
+      toast.error(`Failed to process ${file.name}: ${errorMessage}`)
+    }
+  }
+
+  const handleCreateDemoData = async () => {
+    if (!user) {
+      toast.error('Please log in to create demo data')
+      return
+    }
+
+    setIsCreatingDemo(true)
+    
+    try {
+      const result = await createDemoData(user.id)
+      console.log('Demo data created:', result)
+      
+      toast.success(`Created ${result.transactions.length} demo transactions`)
+      
+      // Navigate to dashboard
       setTimeout(() => {
         navigate('/dashboard')
       }, 1500)
       
     } catch (error) {
-      console.error('Error processing file:', error)
-      updateFileStatus(file.name, 'failed', 100, 'Processing failed')
+      console.error('Error creating demo data:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create demo data'
+      toast.error(errorMessage)
+    } finally {
+      setIsCreatingDemo(false)
     }
-  }
-
-  const generateDemoTransactions = (fileName: string) => {
-    const baseId = Date.now()
-    
-    return [
-      {
-        id: `${baseId}-1`,
-        user_id: 'demo-user',
-        tx_date: '2024-01-15',
-        description: 'Coffee Shop Purchase',
-        amount: -4.95,
-        merchant: 'Starbucks',
-        final_category: 'Meals & Entertainment',
-        is_income: false,
-        is_recurring: false,
-        ai_confidence: 0.95,
-        source_upload_id: fileName,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: `${baseId}-2`,
-        user_id: 'demo-user',
-        tx_date: '2024-01-16',
-        description: 'Salary Deposit',
-        amount: 3500.00,
-        merchant: 'ACME Corp',
-        final_category: 'Salary',
-        is_income: true,
-        is_recurring: true,
-        ai_confidence: 0.99,
-        source_upload_id: fileName,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: `${baseId}-3`,
-        user_id: 'demo-user',
-        tx_date: '2024-01-17',
-        description: 'Grocery Shopping',
-        amount: -87.32,
-        merchant: 'Whole Foods',
-        final_category: 'Groceries',
-        is_income: false,
-        is_recurring: false,
-        ai_confidence: 0.89,
-        source_upload_id: fileName,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: `${baseId}-4`,
-        user_id: 'demo-user',
-        tx_date: '2024-01-18',
-        description: 'Netflix Subscription',
-        amount: -9.99,
-        merchant: 'Netflix',
-        final_category: 'Subscriptions',
-        is_income: false,
-        is_recurring: true,
-        ai_confidence: 0.98,
-        source_upload_id: fileName,
-        created_at: new Date().toISOString()
-      }
-    ]
   }
 
   const updateFileStatus = (
     fileName: string, 
     status: UploadedFile['status'], 
     progress?: number, 
+    message?: string,
     error?: string
   ) => {
     setFiles(prev => prev.map(file => 
       file.name === fileName 
-        ? { ...file, status, progress: progress ?? file.progress, error }
+        ? { ...file, status, progress: progress ?? file.progress, message, error }
         : file
     ))
   }
@@ -225,12 +201,28 @@ const UploadPage: React.FC = () => {
   const getStatusIcon = (status: UploadedFile['status']) => {
     switch (status) {
       case 'uploading':
-      case 'processing':
+      case 'parsing':
+      case 'normalizing':
+      case 'categorizing':
+      case 'saving':
         return <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-green-400" />
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-400" />
+    }
+  }
+
+  const getStatusText = (status: UploadedFile['status']) => {
+    switch (status) {
+      case 'uploading': return 'Uploading'
+      case 'parsing': return 'Parsing'
+      case 'normalizing': return 'Normalizing'
+      case 'categorizing': return 'Categorizing'
+      case 'saving': return 'Saving'
+      case 'completed': return 'Completed'
+      case 'failed': return 'Failed'
+      default: return status
     }
   }
 
@@ -249,14 +241,35 @@ const UploadPage: React.FC = () => {
           <p className="mt-1 text-gray-400">
             Upload your CSV, Excel, or PDF files to automatically categorize transactions
           </p>
-          <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-400" />
-              <span className="text-yellow-400 font-medium">Demo Mode</span>
+          <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-400" />
+                  <span className="text-blue-400 font-medium">Try Demo Data</span>
+                </div>
+                <p className="text-blue-300 text-sm mt-1">
+                  New to Finsight? Try our demo data to explore features.
+                </p>
+              </div>
+              <button
+                onClick={handleCreateDemoData}
+                disabled={isCreatingDemo}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                {isCreatingDemo ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Create Demo Data
+                  </>
+                )}
+              </button>
             </div>
-            <p className="text-yellow-300 text-sm mt-1">
-              Files will be processed as demo data and automatically categorized.
-            </p>
           </div>
         </motion.div>
 
@@ -332,13 +345,17 @@ const UploadPage: React.FC = () => {
                   {getFileIcon(file.name)}
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-white font-medium truncate">{file.name}</p>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(file.status)}
-                        <span className="text-sm text-gray-400 capitalize">{file.status}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-white font-medium truncate">{file.name}</p>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(file.status)}
+                          <span className="text-sm text-gray-400">{getStatusText(file.status)}</span>
+                        </div>
                       </div>
-                    </div>
+                      
+                      {file.message && (
+                        <p className="text-xs text-gray-500 mb-2">{file.message}</p>
+                      )}
                     
                     {file.status !== 'failed' && (
                       <div className="w-full bg-slate-700 rounded-full h-2">
