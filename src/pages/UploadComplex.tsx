@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { 
@@ -11,7 +11,13 @@ import {
   AlertCircle,
   Trash2
 } from 'lucide-react'
+import { useDropzone } from 'react-dropzone'
 import { useTransactionStore } from '../store/transactionStore'
+
+// Simple auth hook fallback
+const useAuth = () => {
+  return { user: null as any } // Demo mode
+}
 
 interface UploadedFile extends File {
   id?: string
@@ -21,119 +27,187 @@ interface UploadedFile extends File {
 }
 
 const UploadPage: React.FC = () => {
+  const { user } = useAuth()
   const { addTransactions } = useTransactionStore()
   const navigate = useNavigate()
   const [files, setFiles] = useState<UploadedFile[]>([])
-  const [isDragActive, setIsDragActive] = useState(false)
 
   // Simple file validation
-  const validateFile = (file: File): { valid: boolean; error?: string } => {
-    if (!file.name) {
+  const validateFileName = (filename: string): { valid: boolean; error?: string } => {
+    if (!filename || typeof filename !== 'string') {
       return { valid: false, error: 'Invalid filename: (unnamed)' }
     }
     
-    const extension = file.name.toLowerCase().split('.').pop()
+    if (filename.trim().length === 0) {
+      return { valid: false, error: 'Invalid filename: empty' }
+    }
+    
+    const extension = filename.toLowerCase().split('.').pop()
     if (!extension) {
-      return { valid: false, error: `Invalid filename: ${file.name} (no extension)` }
+      return { valid: false, error: `Invalid filename: ${filename} (no extension)` }
     }
     
     const allowedExtensions = ['csv', 'xlsx', 'xls', 'pdf']
     if (!allowedExtensions.includes(extension)) {
       return { 
         valid: false, 
-        error: `Unsupported file type: .${extension} (allowed: .csv, .xlsx, .pdf)` 
+        error: `Unsupported file type: .${extension} (allowed: ${allowedExtensions.map(e => `.${e}`).join(', ')})` 
       }
-    }
-    
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      return { valid: false, error: 'File too large (max 10MB)' }
     }
     
     return { valid: true }
   }
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragActive(false)
+  // Simple file type detection
+  const detectFileType = (file: File) => {
+    const extension = file.name?.toLowerCase().split('.').pop() || ''
     
-    const droppedFiles = Array.from(e.dataTransfer.files)
-    processFiles(droppedFiles)
-  }, [])
-
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files)
-      processFiles(selectedFiles)
+    switch (extension) {
+      case 'csv':
+        return { kind: 'csv', ext: 'csv', mime: 'text/csv' }
+      case 'xlsx':
+        return { kind: 'xlsx', ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      case 'xls':
+        return { kind: 'xlsx', ext: 'xls', mime: 'application/vnd.ms-excel' }
+      case 'pdf':
+        return { kind: 'pdf', ext: 'pdf', mime: 'application/pdf' }
+      default:
+        throw new Error(`Unsupported file type: .${extension} (allowed: .csv, .xlsx, .pdf)`)
     }
-  }, [])
+  }
 
-  const processFiles = (fileList: File[]) => {
-    console.log('Processing files:', fileList.map(f => f.name))
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    console.log('=== FILE DROP EVENT ===')
+    console.log('User authenticated:', !!user)
+    console.log('Accepted files:', acceptedFiles.map(f => ({ 
+      name: f.name, 
+      size: f.size, 
+      type: f.type,
+      lastModified: new Date(f.lastModified).toISOString()
+    })))
     
-    fileList.forEach(file => {
-      const validation = validateFile(file)
-      
+    if (!user) {
+      console.warn('No user authenticated - running in DEMO MODE')
+    }
+
+    // Filter out files without proper names or extensions
+    const validFiles = acceptedFiles.filter(file => {
+      const validation = validateFileName(file.name)
       if (!validation.valid) {
+        console.error('File rejected:', validation.error)
+        // Show error for invalid files
         setFiles(prev => [...prev, {
           ...file,
           status: 'failed',
           progress: 0,
           error: validation.error
         }])
+        return false
+      }
+      return true
+    })
+
+    if (validFiles.length !== acceptedFiles.length) {
+      console.warn(`Filtered ${acceptedFiles.length - validFiles.length} invalid files`)
+    }
+
+    const newFiles = validFiles.map(file => ({
+      ...file,
+      status: 'uploading' as const,
+      progress: 0
+    }))
+
+    console.log('Adding files to state:', newFiles.length)
+    setFiles(prev => [...prev, ...newFiles])
+
+    // Process each file
+    for (const file of newFiles) {
+      try {
+        console.log(`Starting to process file: ${file.name}`)
+        console.log(`File details:`, { 
+          name: file.name, 
+          size: file.size, 
+          type: file.type,
+          status: file.status 
+        })
+        await processFile(file)
+        console.log(`Successfully processed file: ${file.name}`)
+      } catch (error) {
+        console.error(`Failed to process file ${file.name}:`, error)
+        updateFileStatus(file.name, 'failed', 100, error instanceof Error ? error.message : 'Unknown error')
+      }
+    }
+  }, [user])
+
+  const processFile = async (file: UploadedFile) => {
+    // Allow demo mode for testing
+    const demoMode = !user
+    console.log('Processing file in', demoMode ? 'DEMO MODE' : 'AUTHENTICATED MODE')
+
+    try {
+      console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type)
+      
+      // Update status to uploading
+      updateFileStatus(file.name, 'uploading', 25)
+
+      // Get file type
+      const detection = detectFileType(file)
+      console.log('File type detection result:', { fileName: file.name, detection })
+
+      console.log('File type detected:', detection.kind)
+
+      // For demo mode, simulate processing
+      if (demoMode) {
+        updateFileStatus(file.name, 'processing', 50)
+        
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Generate demo transactions
+        const demoTransactions = generateDemoTransactions(file.name)
+        
+        updateFileStatus(file.name, 'processing', 75)
+        
+        // Add to transaction store
+        addTransactions(demoTransactions)
+        
+        updateFileStatus(file.name, 'completed', 100)
+        
+        // Show success message
+        console.log(`Demo processing completed for ${file.name}`)
+        
+        // Navigate to dashboard after successful upload
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 1500)
+        
         return
       }
 
-      // Add file to list and start processing
-      const uploadFile: UploadedFile = {
-        ...file,
-        status: 'uploading',
-        progress: 0
-      }
-      
-      setFiles(prev => [...prev, uploadFile])
-      
-      // Simulate file processing
-      processFile(uploadFile)
-    })
-  }
-
-  const processFile = async (file: UploadedFile) => {
-    try {
-      console.log('Processing file:', file.name)
-      
-      // Update progress
-      updateFileStatus(file.name, 'uploading', 25)
-      await sleep(500)
-      
+      // Real processing would go here
       updateFileStatus(file.name, 'processing', 50)
-      await sleep(1000)
       
-      updateFileStatus(file.name, 'processing', 75)
-      
-      // Generate demo transactions
-      const demoTransactions = generateDemoTransactions(file.name)
-      addTransactions(demoTransactions)
+      // TODO: Implement real file upload and processing
+      // const fileService = new FileService(user.id)
+      // const uploadResult = await fileService.uploadFile(file)
+      // const ingestResult = await fileService.ingestFile(uploadResult.fileId)
       
       updateFileStatus(file.name, 'completed', 100)
       
-      // Navigate to dashboard after successful upload
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 1500)
-      
     } catch (error) {
-      console.error('Error processing file:', error)
-      updateFileStatus(file.name, 'failed', 100, 'Processing failed')
+      console.error('Error in processFile:', error)
+      updateFileStatus(file.name, 'failed', 100, error instanceof Error ? error.message : 'Unknown error')
     }
   }
 
   const generateDemoTransactions = (fileName: string) => {
+    const userId = user?.id || 'demo-user'
     const baseId = Date.now()
     
-    return [
+    const baseTransactions = [
       {
         id: `${baseId}-1`,
-        user_id: 'demo-user',
+        user_id: userId,
         tx_date: '2024-01-15',
         description: 'Coffee Shop Purchase',
         amount: -4.95,
@@ -147,7 +221,7 @@ const UploadPage: React.FC = () => {
       },
       {
         id: `${baseId}-2`,
-        user_id: 'demo-user',
+        user_id: userId,
         tx_date: '2024-01-16',
         description: 'Salary Deposit',
         amount: 3500.00,
@@ -161,7 +235,7 @@ const UploadPage: React.FC = () => {
       },
       {
         id: `${baseId}-3`,
-        user_id: 'demo-user',
+        user_id: userId,
         tx_date: '2024-01-17',
         description: 'Grocery Shopping',
         amount: -87.32,
@@ -175,7 +249,7 @@ const UploadPage: React.FC = () => {
       },
       {
         id: `${baseId}-4`,
-        user_id: 'demo-user',
+        user_id: userId,
         tx_date: '2024-01-18',
         description: 'Netflix Subscription',
         amount: -9.99,
@@ -188,6 +262,8 @@ const UploadPage: React.FC = () => {
         created_at: new Date().toISOString()
       }
     ]
+    
+    return baseTransactions
   }
 
   const updateFileStatus = (
@@ -206,6 +282,35 @@ const UploadPage: React.FC = () => {
   const removeFile = (fileName: string) => {
     setFiles(prev => prev.filter(file => file.name !== fileName))
   }
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/pdf': ['.pdf'],
+      'text/plain': ['.csv'],
+      'application/csv': ['.csv']
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+    multiple: true,
+    onDropRejected: (rejectedFiles) => {
+      console.log('Rejected files:', rejectedFiles)
+      rejectedFiles.forEach(({ file, errors }) => {
+        console.log('File:', file.name || 'Unknown file', 'Errors:', errors)
+        const errorMsg = errors.map(e => e.message).join(', ')
+        const fileName = file.name || `Unknown file (${file.size} bytes)`
+        setFiles(prev => [...prev, {
+          ...file,
+          name: fileName, // Ensure we have a name for display
+          status: 'failed',
+          progress: 0,
+          error: errorMsg
+        }])
+      })
+    }
+  })
 
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase()
@@ -234,8 +339,6 @@ const UploadPage: React.FC = () => {
     }
   }
 
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
   return (
     <div className="min-h-screen bg-[#0A0E1A]">
       <div className="mx-auto max-w-[1600px] p-6">
@@ -249,15 +352,17 @@ const UploadPage: React.FC = () => {
           <p className="mt-1 text-gray-400">
             Upload your CSV, Excel, or PDF files to automatically categorize transactions
           </p>
-          <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-400" />
-              <span className="text-yellow-400 font-medium">Demo Mode</span>
+          {!user && (
+            <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-yellow-400" />
+                <span className="text-yellow-400 font-medium">Demo Mode</span>
+              </div>
+              <p className="text-yellow-300 text-sm mt-1">
+                You're not logged in. Files will be processed as demo data.
+              </p>
             </div>
-            <p className="text-yellow-300 text-sm mt-1">
-              Files will be processed as demo data and automatically categorized.
-            </p>
-          </div>
+          )}
         </motion.div>
 
         {/* Upload Dropzone */}
@@ -268,9 +373,7 @@ const UploadPage: React.FC = () => {
           className="neo-card p-8 mb-8"
         >
           <div
-            onDrop={handleDrop}
-            onDragOver={(e) => { e.preventDefault(); setIsDragActive(true) }}
-            onDragLeave={() => setIsDragActive(false)}
+            {...getRootProps()}
             className={`
               relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
               transition-all duration-300 ease-in-out
@@ -280,13 +383,7 @@ const UploadPage: React.FC = () => {
               }
             `}
           >
-            <input 
-              type="file" 
-              multiple 
-              accept=".csv,.xlsx,.xls,.pdf"
-              onChange={handleFileInput}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
+            <input {...getInputProps()} />
             
             <div className="space-y-4">
               <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">

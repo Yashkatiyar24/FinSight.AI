@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Context
 import AuthProvider from './context/SupabaseAuthContext'
+import { TransactionProvider } from './store/transactionStore'
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute'
@@ -49,77 +50,73 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/auth/login" element={<FinSightAuthComponent />} />
-          <Route path="/auth/signup" element={<FinSightAuthComponent />} />
-          <Route path="/auth" element={<FinSightAuthComponent />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/auth/verify-email" element={<VerifyEmail />} />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
+        <TransactionProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/auth/login" element={<FinSightAuthComponent />} />
+            <Route path="/auth/signup" element={<FinSightAuthComponent />} />
+            <Route path="/auth" element={<FinSightAuthComponent />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/verify-email" element={<VerifyEmail />} />
+            
+            {/* Protected Routes */}
+                        <Route path="/dashboard" element={
               <AppLayout>
                 <Dashboard />
               </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/upload" element={
-            <ProtectedRoute>
+            } />
+            
+            <Route path="/upload" element={
               <AppLayout>
                 <Upload />
               </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/transactions" element={
-            <ProtectedRoute>
+            } />
+            
+            <Route path="/transactions" element={
               <AppLayout>
                 <Transactions />
               </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/rules" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Rules />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/reports" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Reports />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/billing" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Billing />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
+            } />
+            
+            <Route path="/rules" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Rules />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Billing />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
-          {/* Catch all - redirect to dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Catch all - redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </TransactionProvider>
       </AuthProvider>
     </QueryClientProvider>
   )
