@@ -3,6 +3,7 @@
  */
 
 // OpenAI integration for smart categorization
+<<<<<<< HEAD
 // interface _OpenAIResponse {
 //   category: string
 //   confidence: number
@@ -10,6 +11,15 @@
 //   merchant_type?: string
 //   is_recurring?: boolean
 // }
+=======
+interface OpenAIResponse {
+  category: string
+  confidence: number
+  subcategory?: string
+  merchant_type?: string
+  is_recurring?: boolean
+}
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
 // Enhanced transaction categories with AI confidence scoring
 export const TRANSACTION_CATEGORIES = {
@@ -52,6 +62,7 @@ export type TransactionCategory = keyof typeof TRANSACTION_CATEGORIES
 // ML-powered transaction categorization
 export class TransactionAnalyzer {
   private static instance: TransactionAnalyzer
+<<<<<<< HEAD
   // private _openaiApiKey: string | null = null
 
   private constructor() {
@@ -59,6 +70,15 @@ export class TransactionAnalyzer {
     // this._openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || 
     //                    localStorage.getItem('finsight_openai_key') ||
     //                    null
+=======
+  private openaiApiKey: string | null = null
+
+  private constructor() {
+    // Try to get OpenAI API key from environment or localStorage
+    this.openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || 
+                       localStorage.getItem('finsight_openai_key') ||
+                       null
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   }
 
   static getInstance(): TransactionAnalyzer {
@@ -69,7 +89,11 @@ export class TransactionAnalyzer {
   }
 
   setApiKey(apiKey: string) {
+<<<<<<< HEAD
     // this._openaiApiKey = apiKey
+=======
+    this.openaiApiKey = apiKey
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
     localStorage.setItem('finsight_openai_key', apiKey)
   }
 
@@ -142,7 +166,11 @@ export class TransactionAnalyzer {
     return { ...result, is_recurring: false }
 
     /* Commented out OpenAI integration for stability
+<<<<<<< HEAD
     // if (!this._openaiApiKey) {
+=======
+    if (!this.openaiApiKey) {
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
       // Fallback to rule-based categorization
       const result = this.categorizeWithRules(description, merchant, amount)
       return { ...result, is_recurring: false }
@@ -172,7 +200,11 @@ Consider context clues like merchant names, transaction descriptions, and amount
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+<<<<<<< HEAD
           // 'Authorization': `Bearer ${this._openaiApiKey}`
+=======
+          'Authorization': `Bearer ${this.openaiApiKey}`
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
         },
         body: JSON.stringify({
           model: 'gpt-3.5-turbo',

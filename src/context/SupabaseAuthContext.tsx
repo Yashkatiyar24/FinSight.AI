@@ -48,6 +48,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         console.log('AuthProvider - Supabase session:', session)
         setSession(session)
         setUser(session?.user ?? null)
+<<<<<<< HEAD
         
         // If no session, create a demo user for testing
         if (!session?.user) {
@@ -69,6 +70,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
         
+=======
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
       } catch (error) {
         console.error('AuthProvider - Error getting session:', error)
       } finally {
@@ -80,8 +83,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
+<<<<<<< HEAD
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event: any, session: any) => {
+=======
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
         console.log('AuthProvider - Auth state change:', event, session)
         setSession(session)
         setUser(session?.user ?? null)

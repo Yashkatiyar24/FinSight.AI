@@ -38,7 +38,10 @@
     "react-hook-form": "^7.65.0",
     "react-router-dom": "^6.28.0",
     "recharts": "^2.12.7",
+<<<<<<< HEAD
     "sonner": "^2.0.7",
+=======
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
     "tailwind-merge": "^3.3.1",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",

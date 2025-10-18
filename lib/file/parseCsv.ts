@@ -18,14 +18,19 @@ export interface CsvParseResult {
 
 export function parseCsv(content: string): CsvParseResult {
   try {
+<<<<<<< HEAD
     let result: CsvParseResult = { data: [], errors: [], meta: {} }
     
     Papa.parse<ParsedRow>(content, {
+=======
+    const result = Papa.parse<ParsedRow>(content, {
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
       header: true,
       skipEmptyLines: true,
       transformHeader: (header: string) => header.trim(),
       transform: (value: string) => value.trim(),
       delimiter: '', // Auto-detect
+<<<<<<< HEAD
       encoding: 'UTF-8',
       complete: (parsedResult) => {
         result = {
@@ -40,6 +45,16 @@ export function parseCsv(content: string): CsvParseResult {
     })
 
     return result
+=======
+      encoding: 'UTF-8'
+    })
+
+    return {
+      data: result.data,
+      errors: result.errors.map(error => `Row ${error.row}: ${error.message}`),
+      meta: result.meta
+    }
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   } catch (error) {
     return {
       data: [],

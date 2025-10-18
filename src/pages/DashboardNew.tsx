@@ -7,10 +7,7 @@ import {
   Receipt, 
   Upload, 
   FileText, 
-<<<<<<< HEAD
-=======
   Settings,
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
@@ -19,11 +16,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/SupabaseAuthContext'
 import { useTransactionStore } from '../store/transactionStore'
-<<<<<<< HEAD
-import { ApiService } from '../services/api'
-import type { DashboardMetrics, Transaction } from '../lib/types'
-=======
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
 interface MetricCardProps {
   title: string
@@ -59,15 +51,9 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const { transactions, metrics, getRecentTransactions } = useTransactionStore()
   const [loading, setLoading] = useState(true)
-<<<<<<< HEAD
-  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null)
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
-  const [error, setError] = useState<string | null>(null)
-=======
 
   // Get recent transactions from store
   const recentTransactions = getRecentTransactions(5)
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
   // Debug logging
   console.log('Dashboard - User state:', user)
@@ -75,44 +61,9 @@ const Dashboard: React.FC = () => {
   console.log('Dashboard - Metrics from store:', metrics)
 
   useEffect(() => {
-<<<<<<< HEAD
-    const fetchDashboardData = async () => {
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        const apiService = new ApiService(user.id)
-        
-        // Fetch dashboard metrics
-        const metrics = await apiService.getDashboardMetrics()
-        setDashboardMetrics(metrics)
-        
-        // Fetch recent transactions
-        const transactions = await apiService.getTransactions(10, 0)
-        setRecentTransactions(transactions)
-        
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [user])
-
-  // Get recent transactions from store as fallback
-  const storeRecentTransactions = getRecentTransactions(5)
-=======
     // If we have data in store or user is available, we're ready
     setLoading(false)
   }, [transactions.length, user])
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
   if (loading) {
     return (
@@ -125,25 +76,8 @@ const Dashboard: React.FC = () => {
     )
   }
 
-<<<<<<< HEAD
-  if (error) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <XCircle className="w-8 h-8 text-red-400 mx-auto mb-4" />
-          <p className="text-red-400 mb-2">Error loading dashboard</p>
-          <p className="text-gray-400 text-sm">{error}</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Use API data or fallback to store data
-  const displayMetrics = dashboardMetrics || metrics || {
-=======
   // Use store metrics or create default ones
   const displayMetrics = metrics || {
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
     total_revenue: 0,
     total_expenses: 0,
     net_profit: 0,
@@ -151,11 +85,6 @@ const Dashboard: React.FC = () => {
     categories: []
   }
 
-<<<<<<< HEAD
-  const displayTransactions = recentTransactions.length > 0 ? recentTransactions : storeRecentTransactions
-
-=======
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -252,11 +181,7 @@ const Dashboard: React.FC = () => {
             >
               <h2 className="text-xl font-semibold text-white mb-6">Spending by Category</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-<<<<<<< HEAD
-                {displayMetrics.categories.slice(0, 6).map((category) => (
-=======
                 {displayMetrics.categories.slice(0, 6).map((category, index) => (
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
                   <div key={category.category} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
                     <div>
                       <p className="text-white font-medium">{category.category}</p>
@@ -286,22 +211,14 @@ const Dashboard: React.FC = () => {
               </a>
             </div>
             
-<<<<<<< HEAD
-            {displayTransactions.length === 0 ? (
-=======
             {recentTransactions.length === 0 ? (
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
               <div className="text-center py-8">
                 <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-400">No recent transactions</p>
               </div>
             ) : (
               <div className="space-y-3">
-<<<<<<< HEAD
-                {displayTransactions.map((transaction) => (
-=======
                 {recentTransactions.map((transaction) => (
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
                   <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-slate-800/50 transition-colors">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
@@ -322,15 +239,9 @@ const Dashboard: React.FC = () => {
                       <p className={`font-semibold ${transaction.is_income ? 'text-green-400' : 'text-red-400'}`}>
                         {transaction.is_income ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                       </p>
-<<<<<<< HEAD
-                      {(transaction as any).ml_confidence && (
-                        <p className="text-xs text-gray-400">
-                          {Math.round((transaction as any).ml_confidence * 100)}% confidence
-=======
                       {transaction.ai_confidence && (
                         <p className="text-xs text-gray-400">
                           {Math.round(transaction.ai_confidence * 100)}% confidence
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
                         </p>
                       )}
                     </div>

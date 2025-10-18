@@ -212,7 +212,11 @@ function normalizeAmount(value: any): number {
   }
 }
 
+<<<<<<< HEAD
 export function validateMapping(mapping: ColumnMapping, _headers: string[]): { valid: boolean; errors: string[] } {
+=======
+export function validateMapping(mapping: ColumnMapping, headers: string[]): { valid: boolean; errors: string[] } {
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   const errors: string[] = []
   
   if (!mapping.date) {

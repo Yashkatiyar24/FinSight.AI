@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+<<<<<<< HEAD
 import { Toaster } from 'sonner'
+=======
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
 // Context
 import AuthProvider from './context/SupabaseAuthContext'
@@ -10,7 +13,10 @@ import { TransactionProvider } from './store/transactionStore'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navigation from './components/Navigation'
 import { FinSightAuthComponent } from './components/FinSightAuthComponent'
+<<<<<<< HEAD
 import ErrorBoundary from './components/ErrorBoundary'
+=======
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
 // Auth Pages
 import AuthCallback from './pages/auth/AuthCallback'
@@ -53,6 +59,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TransactionProvider>
+<<<<<<< HEAD
           <ErrorBoundary>
             <Routes>
               {/* Public Routes */}
@@ -129,6 +136,73 @@ function App() {
               duration={4000}
             />
           </ErrorBoundary>
+=======
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/auth/login" element={<FinSightAuthComponent />} />
+            <Route path="/auth/signup" element={<FinSightAuthComponent />} />
+            <Route path="/auth" element={<FinSightAuthComponent />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/verify-email" element={<VerifyEmail />} />
+            
+            {/* Protected Routes */}
+                        <Route path="/dashboard" element={
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            } />
+            
+            <Route path="/upload" element={
+              <AppLayout>
+                <Upload />
+              </AppLayout>
+            } />
+            
+            <Route path="/transactions" element={
+              <AppLayout>
+                <Transactions />
+              </AppLayout>
+            } />
+            
+            <Route path="/rules" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Rules />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Billing />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Catch all - redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
         </TransactionProvider>
       </AuthProvider>
     </QueryClientProvider>

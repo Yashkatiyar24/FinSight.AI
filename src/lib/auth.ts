@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { supabase } from './supabase'
+import { supabase, getCurrentUser, getCurrentSession } from './supabase'
 import type { AuthUser, AuthSession } from './supabase'
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -37,11 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-<<<<<<< HEAD
-      async (_: any, session: any) => {
-=======
-      async (_, session) => {
->>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
+      async (event, session) => {
         setSession(session as AuthSession)
         setUser(session?.user as AuthUser || null)
         setLoading(false)
@@ -93,11 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

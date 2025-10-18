@@ -13,9 +13,17 @@ import {
 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { useTransactionStore } from '../store/transactionStore'
+<<<<<<< HEAD
 import { ApiService } from '../services/api'
 import { toast } from 'sonner'
 import { useAuth } from '../context/SupabaseAuthContext'
+=======
+
+// Simple auth hook fallback
+const useAuth = () => {
+  return { user: null as any } // Demo mode
+}
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
 
 interface UploadedFile extends File {
   id?: string
@@ -56,6 +64,7 @@ const UploadPage: React.FC = () => {
     return { valid: true }
   }
 
+<<<<<<< HEAD
   // Import the proper file detection function
   const detectFileType = (file: File) => {
     const originalName = file.name || 'unnamed'
@@ -94,6 +103,24 @@ const UploadPage: React.FC = () => {
     }
     
     throw new Error(`Unsupported file type: ${extension || 'unknown'} (allowed: .csv, .xlsx, .pdf)`)
+=======
+  // Simple file type detection
+  const detectFileType = (file: File) => {
+    const extension = file.name?.toLowerCase().split('.').pop() || ''
+    
+    switch (extension) {
+      case 'csv':
+        return { kind: 'csv', ext: 'csv', mime: 'text/csv' }
+      case 'xlsx':
+        return { kind: 'xlsx', ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      case 'xls':
+        return { kind: 'xlsx', ext: 'xls', mime: 'application/vnd.ms-excel' }
+      case 'pdf':
+        return { kind: 'pdf', ext: 'pdf', mime: 'application/pdf' }
+      default:
+        throw new Error(`Unsupported file type: .${extension} (allowed: .csv, .xlsx, .pdf)`)
+    }
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -194,7 +221,10 @@ const UploadPage: React.FC = () => {
         updateFileStatus(file.name, 'completed', 100)
         
         // Show success message
+<<<<<<< HEAD
         toast.success(`Demo processing completed for ${file.name}`)
+=======
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
         console.log(`Demo processing completed for ${file.name}`)
         
         // Navigate to dashboard after successful upload
@@ -205,6 +235,7 @@ const UploadPage: React.FC = () => {
         return
       }
 
+<<<<<<< HEAD
       // Real processing with API service
       updateFileStatus(file.name, 'processing', 50)
       
@@ -236,6 +267,21 @@ const UploadPage: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       updateFileStatus(file.name, 'failed', 100, errorMessage)
       toast.error(`Failed to process ${file.name}: ${errorMessage}`)
+=======
+      // Real processing would go here
+      updateFileStatus(file.name, 'processing', 50)
+      
+      // TODO: Implement real file upload and processing
+      // const fileService = new FileService(user.id)
+      // const uploadResult = await fileService.uploadFile(file)
+      // const ingestResult = await fileService.ingestFile(uploadResult.fileId)
+      
+      updateFileStatus(file.name, 'completed', 100)
+      
+    } catch (error) {
+      console.error('Error in processFile:', error)
+      updateFileStatus(file.name, 'failed', 100, error instanceof Error ? error.message : 'Unknown error')
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
     }
   }
 

@@ -84,7 +84,11 @@ const calculateMetrics = (transactions: ProcessedTransaction[]): DashboardMetric
 export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<ProcessedTransaction[]>([])
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+<<<<<<< HEAD
   const [isLoading, _setIsLoading] = useState(false)
+=======
+  const [isLoading, setIsLoading] = useState(false)
+>>>>>>> b2959ab69516f91b71bffba9aa21bf00ee004093
   const [lastUploadId, setLastUploadId] = useState<string | null>(null)
 
   const addTransactions = (newTransactions: ProcessedTransaction[]) => {
