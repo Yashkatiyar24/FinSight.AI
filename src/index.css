@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #0a0e1a;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0a0e1a;
+  color: white;
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  border-color: rgba(43, 209, 255, 0.1);
+}
+
+/* Neo-morphism styles */
+.neo-card {
+  background: rgba(15, 18, 24, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(43, 209, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.neo-button {
+  background: linear-gradient(135deg, #2BD1FF 0%, #7A5CFF 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(43, 209, 255, 0.3);
+}
+
+.neo-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(43, 209, 255, 0.4);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #2BD1FF 0%, #7A5CFF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
